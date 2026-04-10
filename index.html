@@ -127,16 +127,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:#000;overflow:hidden}
 <script>
 // ── 타일 URL ──────────────────────────────────────────────────────
 const TILE = {
-  night:     'http://xdworld.vworld.kr:8080/2d/midnight/service/{z}/{x}/{y}.png',
-  base:      'http://xdworld.vworld.kr:8080/2d/Base/service/{z}/{x}/{y}.png',
-  satellite: 'http://xdworld.vworld.kr:8080/2d/Satellite/service/{z}/{x}/{y}.jpeg',
-  white:     'http://xdworld.vworld.kr:8080/2d/white/service/{z}/{x}/{y}.png',
-  hybrid:    'http://xdworld.vworld.kr:8080/2d/Hybrid/service/{z}/{x}/{y}.png'
+  night:     'https://xdworld.vworld.kr:8080/2d/midnight/service/{z}/{x}/{y}.png',
+  base:      'https://xdworld.vworld.kr:8080/2d/Base/service/{z}/{x}/{y}.png',
+  satellite: 'https://xdworld.vworld.kr:8080/2d/Satellite/service/{z}/{x}/{y}.jpeg',
+  white:     'https://xdworld.vworld.kr:8080/2d/white/service/{z}/{x}/{y}.png',
+  hybrid:    'https://xdworld.vworld.kr:8080/2d/Hybrid/service/{z}/{x}/{y}.png'
 };
 
 // ── 기념관 데이터 ─────────────────────────────────────────────────
 const MEMORIALS = [
-  {name:'유관순 열사 사적지',          ll:[127.2296,36.7965], desc:'충남 천안시 동남구 병천면',   url:'https://www.cheonan.go.kr/yugwansun.do'},
+  {name:'유관순 열사 기념관',          ll:[127.2296,36.7965], desc:'충남 천안시 동남구 병천면',   url:'https://www.cheonan.go.kr/yugwansun.do'},
   {name:'서대문형무소 역사관',          ll:[126.9578,37.5784], desc:'서울 서대문구 통일로 251',    url:'https://sphh.sscmc.or.kr/'},
   {name:'탑골공원',                    ll:[126.9868,37.5728], desc:'서울 종로구 종로 99',          url:'https://encykorea.aks.ac.kr/Article/E0058835'},
   {name:'독립기념관',                  ll:[127.1521,36.8601], desc:'충남 천안시 동남구 목천읍',    url:'https://i815.or.kr/'},
