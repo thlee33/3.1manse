@@ -4,9 +4,9 @@
 
 1919년 3월 1일, 전국 방방곡곡으로 번져나간 3·1 독립선언과 만세운동의 기록을 시간순으로 지도 시각화했습니다. 
 
-| **🚀 시연 페이지** | <a href="https://thlee33.github.io/3.1manse/" target="_blank">3.1만세 시뮬레이션 바로가기 (GitHub Pages)</a> |  
-| **🎬 시연 동영상** | <a href="https://youtu.be/lLYi2hGtgIk" target="_blank">유튜브 시연 영상 시청 (YouTube)</a> |  
-| **📝 기술 블로그** | <a href="https://unique-payment-110.notion.site/3-1-33e80db13da580d781a9f030417e0d69" target="_blank">프로젝트 개발 상세 기록 (Notion)</a> |  
+**🚀 시연 페이지** | <a href="https://thlee33.github.io/3.1manse/" target="_blank" rel="noopener noreferrer">3.1만세 시뮬레이션 바로가기 (GitHub Pages)</a>   
+**🎬 시연 동영상** | <a href="https://youtu.be/lLYi2hGtgIk" target="_blank" rel="noopener noreferrer">유튜브 시연 영상 시청 (YouTube)</a>   
+**📝 기술 블로그** | <a href="https://unique-payment-110.notion.site/3-1-33e80db13da580d781a9f030417e0d69" target="_blank" rel="noopener noreferrer">프로젝트 개발 상세 기록 (Notion)</a>   
 
 ---
 
