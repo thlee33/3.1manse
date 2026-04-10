@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3·1 만세운동 시각화 지도</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="data/만세운동_data.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:#000; overflow:hidden; }
+
+#map { width:100vw; height:100vh; }
+
+/* 파티클 캔버스 */
+#fire-canvas {
+  position:absolute; top:0; left:0;
+  width:100%; height:100%;
+  pointer-events:none; z-index:2;
+}
+
+/* 공통 패널 스타일 */
+.panel {
+  position:absolute;
+  background:rgba(10,10,15,0.88);
+  border:1px solid rgba(255,120,30,0.3);
+  border-radius:10px;
+  color:#f0e0c0;
+  backdrop-filter:blur(6px);
+  z-index:10;
+}
+
+/* 타이틀 */
+#title-panel {
+  top:16px; left:16px;
+  padding:12px 18px;
+  border-left:4px solid #ff4500;
+}
+#title-panel h1 { font-size:17px; font-weight:700; color:#ffd060; letter-spacing:1px; }
+#title-panel p  { font-size:11px; color:#aaa; margin-top:3px; }
+
+/* 우측 컨트롤 */
+#layer-panel {
+  top:16px; right:16px;
+  padding:14px 16px;
+  width:200px;
+}
+.panel-section { margin-bottom:14px; }
+.panel-section:last-child { margin-bottom:0; }
+.panel-label {
+  font-size:10px; font-weight:700;
+  color:#ff8030; letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:8px;
+  padding-bottom:4px;
+  border-bottom:1px solid rgba(255,128,48,0.2);
+}
+.radio-row, .check-row {
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:6px; cursor:pointer;
+}
+.radio-row input, .check-row input { accent-color:#ff6020; cursor:pointer; }
+.radio-row span, .check-row span { font-size:12px; color:#ddd; }
+
+/* 오버레이 투명도 */
+#opacity-row {
+  display:flex; align-items:center; gap:8px; margin-top:4px;
+}
+#opacity-row span { font-size:11px; color:#aaa; white-space:nowrap; }
+#map1919-opacity {
+  flex:1; accent-color:#ff6020;
+  -webkit-appearance:none; height:3px;
+  background:linear-gradient(to right, #ff6020 var(--val,60%), #444 var(--val,60%));
+  border-radius:2px; cursor:pointer;
+}
+#map1919-opacity::-webkit-slider-thumb {
+  -webkit-appearance:none; width:12px; height:12px;
+  border-radius:50%; background:#ff6020; cursor:pointer;
+}
+
+/* 하단 애니메이션 컨트롤 */
+#anim-panel {
+  bottom:24px;
+  left:50%; transform:translateX(-50%);
+  padding:14px 20px;
+  min-width:560px;
+  max-width:92vw;
+}
+#date-display {
+  text-align:center;
+  font-size:22px; font-weight:700;
+  color:#ffd060; letter-spacing:2px;
+  margin-bottom:10px;
+  text-shadow:0 0 12px rgba(255,160,0,0.6);
+}
+#timeline-wrap { position:relative; margin-bottom:10px; }
+#timeline {
+  width:100%; -webkit-appearance:none;
+  height:4px; border-radius:2px; cursor:pointer;
+  background:linear-gradient(to right, #ff6020 var(--pct,0%), #333 var(--pct,0%));
+}
+#timeline::-webkit-slider-thumb {
+  -webkit-appearance:none; width:14px; height:14px;
+  border-radius:50%; background:#ffd060;
+  box-shadow:0 0 6px rgba(255,200,0,0.8); cursor:pointer;
+}
+.anim-row {
+  display:flex; align-items:center; justify-content:center;
+  gap:10px;
+}
+.btn {
+  padding:6px 16px; border:none; border-radius:6px; cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif; font-size:13px; font-weight:500;
+  transition:all 0.15s;
+}
+#play-btn {
+  background:linear-gradient(135deg,#ff4500,#ff8000);
+  color:#fff; min-width:80px;
+}
+#play-btn:hover { filter:brightness(1.15); }
+#reset-btn {
+  background:rgba(255,255,255,0.1); color:#ddd; border:1px solid #444;
+}
+#reset-btn:hover { background:rgba(255,255,255,0.18); }
+#speed-select {
+  background:#1a1a1a; color:#ffd060; border:1px solid #444;
+  border-radius:6px; padding:5px 8px; font-size:12px; cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;
+}
+#progress-info { font-size:11px; color:#888; }
+
+/* 팝업 */
+#popup {
+  position:absolute; z-index:20;
+  display:none;
+  max-width:280px;
+  pointer-events:none;
+}
+.popup-inner {
+  background:rgba(10,10,15,0.95);
+  border:1px solid rgba(255,120,30,0.5);
+  border-radius:8px; padding:12px 14px;
+  pointer-events:auto;
+}
+.popup-title { font-size:13px; font-weight:700; color:#ffd060; margin-bottom:6px; }
+.popup-row { font-size:11px; color:#bbb; margin-bottom:3px; }
+.popup-url {
+  display:inline-block; margin-top:6px;
+  font-size:11px; color:#60aaff;
+  text-decoration:none; word-break:break-all;
+}
+.popup-url:hover { text-decoration:underline; }
+.popup-close {
+  position:absolute; top:6px; right:8px;
+  cursor:pointer; color:#888; font-size:14px; line-height:1;
+}
+
+/* 범례 */
+#legend {
+  position:absolute; bottom:24px; left:16px;
+  padding:10px 14px; z-index:10;
+}
+.legend-item { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.legend-dot {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0;
+}
+.legend-dot.fire { background:radial-gradient(circle,#fff 0%,#ffa000 40%,#ff2000 100%); }
+.legend-dot.memorial { background:#ffd700; border:2px solid #fff; }
+.legend-text { font-size:11px; color:#ccc; }
+
+/* 로딩 */
+#loading {
+  position:absolute; inset:0;
+  background:#050508; z-index:100;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px;
+}
+.loading-fire {
+  font-size:48px; animation:flicker 0.4s infinite alternate;
+}
+@keyframes flicker {
+  from { opacity:1; transform:scale(1) rotate(-3deg); }
+  to   { opacity:0.7; transform:scale(1.08) rotate(3deg); }
+}
+#loading p { color:#ffd060; font-size:14px; }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-fire">🔥</div>
+  <p>3·1 만세운동 지도 불러오는 중…</p>
+</div>
+
+<div id="map"></div>
+<canvas id="fire-canvas"></canvas>
+
+<!-- 타이틀 -->
+<div class="panel" id="title-panel">
+  <h1>🔥 3·1 만세운동 시각화</h1>
+  <p>1919년 독립운동 확산 기록 · 국사편찬위원회</p>
+</div>
+
+<!-- 레이어 · 배경지도 컨트롤 -->
+<div class="panel" id="layer-panel">
+  <div class="panel-section">
+    <div class="panel-label">배경지도</div>
+    <label class="radio-row"><input type="radio" name="base" value="vworld-night" checked><span>브이월드 야간</span></label>
+    <label class="radio-row"><input type="radio" name="base" value="vworld-base"><span>브이월드 일반</span></label>
+    <label class="radio-row"><input type="radio" name="base" value="vworld-satellite"><span>브이월드 영상</span></label>
+    <label class="radio-row"><input type="radio" name="base" value="vworld-white"><span>브이월드 백지도</span></label>
+  </div>
+  <div class="panel-section">
+    <div class="panel-label">레이어</div>
+    <label class="check-row"><input type="checkbox" id="lyr-protests" checked><span>만세운동</span></label>
+    <label class="check-row"><input type="checkbox" id="lyr-memorials"><span>기념관 및 역사관</span></label>
+    <label class="check-row"><input type="checkbox" id="lyr-1919" checked><span>1919년 지도 오버레이</span></label>
+    <div id="opacity-row">
+      <span>투명도</span>
+      <input type="range" id="map1919-opacity" min="0" max="100" value="60">
+      <span id="opacity-val">60%</span>
+    </div>
+  </div>
+</div>
+
+<!-- 애니메이션 컨트롤 -->
+<div class="panel" id="anim-panel">
+  <div id="date-display">1919년 01월 01일</div>
+  <div id="timeline-wrap">
+    <input type="range" id="timeline" min="0" max="1000" value="0">
+  </div>
+  <div class="anim-row">
+    <button class="btn" id="play-btn">▶ 재생</button>
+    <button class="btn" id="reset-btn">↺ 처음</button>
+    <select id="speed-select">
+      <option value="1">1배속</option>
+      <option value="2">2배속</option>
+      <option value="5" selected>5배속</option>
+      <option value="10">10배속</option>
+      <option value="20">20배속</option>
+    </select>
+    <span id="progress-info">0 / 0 건</span>
+  </div>
+</div>
+
+<!-- 범례 -->
+<div class="panel" id="legend">
+  <div class="legend-item"><div class="legend-dot fire"></div><span class="legend-text">만세운동 지점</span></div>
+  <div class="legend-item"><div class="legend-dot memorial"></div><span class="legend-text">기념관·역사관</span></div>
+</div>
+
+<!-- 팝업 -->
+<div id="popup">
+  <div class="popup-inner">
+    <span class="popup-close" id="popup-close">✕</span>
+    <div class="popup-title" id="popup-title"></div>
+    <div class="popup-row" id="popup-date"></div>
+    <div class="popup-row" id="popup-count"></div>
+    <a class="popup-url" id="popup-url" target="_blank" rel="noopener"></a>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// 상수 및 데이터
+// ═══════════════════════════════════════════════════════════
+const TILES = {
+  'vworld-base':      'http://xdworld.vworld.kr:8080/2d/Base/service/{z}/{x}/{y}.png',
+  'vworld-satellite': 'http://xdworld.vworld.kr:8080/2d/Satellite/service/{z}/{x}/{y}.jpeg',
+  'vworld-hybrid':    'http://xdworld.vworld.kr:8080/2d/Hybrid/service/{z}/{x}/{y}.png',
+  'vworld-white':     'http://xdworld.vworld.kr:8080/2d/white/service/{z}/{x}/{y}.png',
+  'vworld-night':     'http://xdworld.vworld.kr:8080/2d/midnight/service/{z}/{x}/{y}.png',
+};
+
+// 1919년 WMS (EPSG:3857 호환)
+const WMS_1919 = [
+  'https://hgis.history.go.kr/openapi/get.do',
+  '?apiKey=840e2e2c-fa32-470f-bc00-c1521709b4f3',
+  '&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap',
+  '&FORMAT=image%2Fpng&TRANSPARENT=true',
+  '&LAYERS=history%3Amap1919',
+  '&SRS=EPSG%3A3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256'
+].join('');
+
+const MEMORIALS = [
+  { name:'유관순 열사 사적지',          lngLat:[127.2296,36.7965], desc:'충남 천안시 동남구 병천면',          url:'https://www.cheonan.go.kr/yugwansun.do' },
+  { name:'서대문형무소 역사관',          lngLat:[126.9578,37.5784], desc:'서울 서대문구 통일로 251',           url:'https://sphh.sscmc.or.kr/' },
+  { name:'탑골공원',                    lngLat:[126.9868,37.5728], desc:'서울 종로구 종로 99',               url:'https://encykorea.aks.ac.kr/Article/E0058835' },
+  { name:'독립기념관',                  lngLat:[127.1521,36.8601], desc:'충남 천안시 동남구 목천읍',          url:'https://i815.or.kr/' },
+  { name:'화성 제암리 3·1운동 순국유적', lngLat:[127.0264,37.0744], desc:'경기 화성시 향남읍 제암리',         url:'https://www.heritage.go.kr/heri/cul/culSelectDetail.do?pageNo=1_1_1_1&ccbaCpno=1333102990000' },
+  { name:'안중근의사기념관',             lngLat:[126.9897,37.5519], desc:'서울 중구 소월로 (남산)',           url:'https://www.ahnjunggeun.or.kr/index.html' },
+  { name:'6·10만세 기념비',             lngLat:[126.9885,37.5715], desc:'서울 종로구 탑골공원 인근',         url:'https://mfis.mpva.go.kr/memorial/movementView.do?gubunCode=DR&sid=1966' },
+  { name:'삼가장터 3.1만세운동 기념탑',  lngLat:[128.1695,35.5434], desc:'경남 합천군 삼가면',               url:'https://mfis.mpva.go.kr/memorial/movementView.do?gubunCode=DR&sid=394' },
+  { name:'군산 3·1운동 100주년 기념관', lngLat:[126.7108,35.9676], desc:'전북 군산시',                      url:'https://museum.gunsan.go.kr/new/contents/exhibition601.jsp' },
+  { name:'무오법정사 항일운동 기념탑',   lngLat:[126.5569,33.2597], desc:'제주 서귀포시',                    url:'https://mfis.mpva.go.kr/memorial/movementView.do?gubunCode=DR&sid=36' },
+];
+
+// ═══════════════════════════════════════════════════════════
+// 데이터 준비
+// ═══════════════════════════════════════════════════════════
+const data = window.PROTEST_DATA;
+const features = data.features;
+
+// 날짜 인덱스 (유일값, 정렬)
+const allDates = [...new Set(features.map(f => f.properties.date))].sort();
+const dateMin  = allDates[0];
+const dateMax  = allDates[allDates.length - 1];
+const totalMs  = new Date(dateMax) - new Date(dateMin);
+
+function dateFromSlider(pct) {
+  const ms = new Date(dateMin).getTime() + totalMs * pct;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+function sliderFromDate(d) {
+  return (new Date(d) - new Date(dateMin)) / totalMs;
+}
+function formatKorDate(d) {
+  const [y, m, day] = d.split('-');
+  return `${y}년 ${parseInt(m)}월 ${parseInt(day)}일`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 파티클 시스템
+// ═══════════════════════════════════════════════════════════
+const fireCanvas = document.getElementById('fire-canvas');
+const ctx = fireCanvas.getContext('2d');
+let particles = [];
+let activePts = [];    // { lngLat, n, isNew }
+let newPts    = [];    // 이번 프레임에 새로 점화된 포인트
+
+function resizeCanvas() {
+  fireCanvas.width  = window.innerWidth;
+  fireCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function spawnParticle(lngLat, n, burst) {
+  const scale = Math.min(1 + Math.log10(Math.max(n, 1)) * 0.4, 2.5);
+  const count = burst ? 18 : 2;
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      lng: lngLat[0], lat: lngLat[1],
+      dx: (Math.random() - 0.5) * (burst ? 14 : 6),
+      dy: burst ? -(Math.random() * 6) : 0,
+      vx: (Math.random() - 0.5) * (burst ? 3 : 1.2),
+      vy: -(Math.random() * 3 + 1.5) * scale,
+      life: 1.0,
+      decay: (burst ? 0.04 : 0.022) + Math.random() * 0.018,
+      size: (Math.random() * 4 + 2) * scale,
+      hue: Math.random() * 25,
+    });
+  }
+}
+
+function renderParticles() {
+  ctx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
+  if (!mapReady) return;
+
+  // 점화 버스트
+  for (const pt of newPts) {
+    spawnParticle(pt.lngLat, pt.n, true);
+  }
+  newPts = [];
+
+  // 지속 방출 (뷰포트 내 포인트만)
+  const bounds = map.getBounds();
+  const MAX_SPAWN = 2000;
+  let spawned = 0;
+  for (const pt of activePts) {
+    if (spawned >= MAX_SPAWN) break;
+    if (pt.lngLat[0] < bounds.getWest() || pt.lngLat[0] > bounds.getEast() ||
+        pt.lngLat[1] < bounds.getSouth() || pt.lngLat[1] > bounds.getNorth()) continue;
+    spawnParticle(pt.lngLat, pt.n, false);
+    spawned++;
+  }
+
+  // 파티클 제한
+  if (particles.length > 8000) particles.splice(0, particles.length - 8000);
+
+  // 그리기 (additive 블렌딩 → 불꽃 발광 효과)
+  ctx.globalCompositeOperation = 'lighter';
+  const dead = [];
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    p.dx += p.vx; p.dy += p.vy;
+    p.vx *= 0.97; p.vy *= 0.985;
+    p.life -= p.decay;
+    if (p.life <= 0) { dead.push(i); continue; }
+
+    const base = map.project([p.lng, p.lat]);
+    const x = base.x + p.dx, y = base.y + p.dy;
+    const sz = p.size * (0.3 + p.life * 0.7);
+    const prog = 1 - p.life;
+    const hue = 55 - prog * 55 + p.hue;       // 노란(55) → 주황 → 빨강(0)
+    const lgt = prog < 0.3 ? 90 : 65 - prog * 40;
+
+    const g = ctx.createRadialGradient(x, y, 0, x, y, sz);
+    g.addColorStop(0,   `hsla(${hue+15},100%,${Math.min(lgt+25,95)}%,${p.life})`);
+    g.addColorStop(0.35,`hsla(${hue},100%,${lgt}%,${p.life * 0.75})`);
+    g.addColorStop(1,   `hsla(${Math.max(hue-20,0)},80%,${Math.max(lgt-20,15)}%,0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+
+  // 죽은 파티클 제거 (역순)
+  for (let i = dead.length - 1; i >= 0; i--) particles.splice(dead[i], 1);
+}
+
+// ═══════════════════════════════════════════════════════════
+// 지도 초기화
+// ═══════════════════════════════════════════════════════════
+let mapReady = false;
+let map;
+
+function buildStyle(baseTile) {
+  return {
+    version: 8,
+    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    sources: {
+      'base-tiles': { type:'raster', tiles:[baseTile], tileSize:256, attribution:'VWorld' },
+      'hybrid-tiles': { type:'raster', tiles:[TILES['vworld-hybrid']], tileSize:256 },
+      'tiles-1919': { type:'raster', tiles:[WMS_1919], tileSize:256, attribution:'국사편찬위원회' },
+      'protests': { type:'geojson', data: data },
+      'memorials-src': {
+        type:'geojson',
+        data:{
+          type:'FeatureCollection',
+          features: MEMORIALS.map((m,i) => ({
+            type:'Feature', id:i,
+            geometry:{ type:'Point', coordinates: m.lngLat },
+            properties:{ name:m.name, desc:m.desc, url:m.url }
+          }))
+        }
+      }
+    },
+    layers: [
+      // 기본 배경
+      { id:'base', type:'raster', source:'base-tiles', paint:{ 'raster-opacity':1 } },
+      // 영상지도용 하이브리드 라벨 (초기 숨김)
+      { id:'hybrid', type:'raster', source:'hybrid-tiles', paint:{ 'raster-opacity':0 } },
+      // 1919년 지도 오버레이
+      { id:'map-1919', type:'raster', source:'tiles-1919',
+        paint:{ 'raster-opacity':0.6, 'raster-opacity-transition':{ duration:300 } } },
+      // 만세운동 히트맵 (누적 열기)
+      { id:'protests-heat', type:'heatmap', source:'protests',
+        filter:['<=',['get','date'],'1919-01-01'],
+        paint:{
+          'heatmap-weight':['interpolate',['linear'],['get','n'],0,0.05,1000,1.0],
+          'heatmap-intensity':1.8,
+          'heatmap-color':['interpolate',['linear'],['heatmap-density'],
+            0,'rgba(0,0,0,0)', 0.15,'rgba(180,40,0,0.4)',
+            0.5,'rgba(255,80,0,0.7)', 0.85,'rgba(255,180,0,0.9)', 1,'rgba(255,255,150,1)'],
+          'heatmap-radius':['interpolate',['zoom'],['zoom'], 5,20, 9,35],
+          'heatmap-opacity':0.8
+        }
+      },
+      // 개별 포인트 글로우
+      { id:'protests-glow', type:'circle', source:'protests',
+        filter:['<=',['get','date'],'1919-01-01'],
+        paint:{
+          'circle-radius':['interpolate',['linear'],['get','n'],0,4,500,12,2000,22],
+          'circle-color':'#ff6000',
+          'circle-blur':1.8,
+          'circle-opacity':0.55
+        }
+      },
+      // 포인트 코어
+      { id:'protests-core', type:'circle', source:'protests',
+        filter:['<=',['get','date'],'1919-01-01'],
+        paint:{
+          'circle-radius':['interpolate',['linear'],['get','n'],0,2,500,5,2000,9],
+          'circle-color':'#ffcc00',
+          'circle-opacity':0.9
+        }
+      },
+      // 기념관 글로우
+      { id:'memorials-glow', type:'circle', source:'memorials-src',
+        layout:{ visibility:'none' },
+        paint:{ 'circle-radius':14, 'circle-color':'#ffd700', 'circle-blur':1.2, 'circle-opacity':0.4 }
+      },
+      // 기념관 코어
+      { id:'memorials-core', type:'circle', source:'memorials-src',
+        layout:{ visibility:'none' },
+        paint:{ 'circle-radius':7, 'circle-color':'#ffd700', 'circle-stroke-color':'#fff', 'circle-stroke-width':1.5 }
+      },
+    ]
+  };
+}
+
+map = new maplibregl.Map({
+  container: 'map',
+  style: buildStyle(TILES['vworld-night']),
+  center: [127.8, 36.5],
+  zoom: 6.8,
+  minZoom: 5, maxZoom: 14,
+});
+
+map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+map.addControl(new maplibregl.ScaleControl({ unit:'metric' }), 'bottom-left');
+
+map.on('load', () => {
+  mapReady = true;
+  document.getElementById('loading').style.display = 'none';
+  updateFilter(dateMin);
+  startRenderLoop();
+});
+
+// ═══════════════════════════════════════════════════════════
+// 필터 업데이트 (날짜 기준)
+// ═══════════════════════════════════════════════════════════
+let prevDate = dateMin;
+let prevActiveSet = new Set();
+
+function updateFilter(dateStr) {
+  const f = ['<=', ['get','date'], dateStr];
+  ['protests-heat','protests-glow','protests-core'].forEach(id => {
+    if (map.getLayer(id)) map.setFilter(id, f);
+  });
+
+  // 활성 포인트 갱신
+  const newActive = features.filter(ft => ft.properties.date <= dateStr);
+  activePts = newActive.map(ft => ({
+    lngLat: ft.geometry.coordinates,
+    n: ft.properties.n || 0
+  }));
+
+  // 새로 점화된 포인트 감지 (버스트)
+  if (dateStr > prevDate) {
+    const added = newActive.filter(ft => !prevActiveSet.has(ft.properties.id || ft.properties.name));
+    newPts = added.slice(0, 60).map(ft => ({ lngLat: ft.geometry.coordinates, n: ft.properties.n || 0 }));
+    newActive.forEach(ft => prevActiveSet.add(ft.properties.id || ft.properties.name));
+  }
+
+  prevDate = dateStr;
+
+  // UI 업데이트
+  document.getElementById('date-display').textContent = formatKorDate(dateStr);
+  document.getElementById('progress-info').textContent =
+    `${activePts.length.toLocaleString()} / ${features.length.toLocaleString()} 건`;
+
+  const pct = sliderFromDate(dateStr);
+  const slider = document.getElementById('timeline');
+  slider.value = Math.round(pct * 1000);
+  slider.style.setProperty('--pct', (pct * 100).toFixed(1) + '%');
+}
+
+// ═══════════════════════════════════════════════════════════
+// 애니메이션 루프
+// ═══════════════════════════════════════════════════════════
+let animState = { playing:false, currentDate:dateMin, speed:5, lastTs:null };
+
+function startRenderLoop() {
+  requestAnimationFrame(function loop(ts) {
+    if (animState.playing && animState.lastTs !== null) {
+      const dt = Math.min(ts - animState.lastTs, 100); // 최대 100ms 간격
+      // speed배속 × 3일/초 기준
+      const daysPerSec = animState.speed * 3;
+      const addMs = daysPerSec * dt;
+      const cur = new Date(animState.currentDate).getTime();
+      const next = cur + addMs;
+      const nextDate = new Date(next).toISOString().slice(0, 10);
+
+      if (nextDate <= dateMax) {
+        animState.currentDate = nextDate;
+        updateFilter(nextDate);
+      } else {
+        animState.currentDate = dateMax;
+        updateFilter(dateMax);
+        animState.playing = false;
+        document.getElementById('play-btn').textContent = '▶ 재생';
+      }
+    }
+    animState.lastTs = ts;
+    renderParticles();
+    requestAnimationFrame(loop);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// 배경지도 전환
+// ═══════════════════════════════════════════════════════════
+let currentBase = 'vworld-night';
+
+function switchBase(key) {
+  currentBase = key;
+  if (map.getSource('base-tiles')) {
+    map.getSource('base-tiles').setTiles([TILES[key === 'vworld-satellite' ? 'vworld-satellite' : key]]);
+  }
+  // 하이브리드 라벨: 영상지도일 때만
+  if (map.getLayer('hybrid')) {
+    map.setPaintProperty('hybrid', 'raster-opacity', key === 'vworld-satellite' ? 0.9 : 0);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// 팝업
+// ═══════════════════════════════════════════════════════════
+const popup = document.getElementById('popup');
+
+function showPopup(props, lngLat) {
+  document.getElementById('popup-title').textContent = props.name || '(이름 없음)';
+  document.getElementById('popup-date').textContent  = props.date ? `📅 ${formatKorDate(props.date)}` : '';
+  document.getElementById('popup-count').textContent =
+    props.n > 0 ? `👥 참가자 최대 ${props.n.toLocaleString()}명` :
+    props.desc ? `📍 ${props.desc}` : '';
+
+  const urlEl = document.getElementById('popup-url');
+  if (props.url) {
+    urlEl.href = props.url;
+    urlEl.textContent = '🔗 관련 자료 보기';
+    urlEl.style.display = 'block';
+  } else {
+    urlEl.style.display = 'none';
+  }
+
+  const pt = map.project(lngLat);
+  popup.style.left = (pt.x + 14) + 'px';
+  popup.style.top  = (pt.y - 60) + 'px';
+  popup.style.display = 'block';
+}
+
+document.getElementById('popup-close').addEventListener('click', () => {
+  popup.style.display = 'none';
+});
+
+// 클릭 이벤트
+['protests-core','memorials-core'].forEach(id => {
+  map.on('click', id, e => {
+    const f = e.features[0];
+    showPopup(f.properties, e.lngLat);
+  });
+  map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
+});
+
+map.on('move', () => {
+  if (popup.style.display !== 'none') popup.style.display = 'none';
+});
+
+// ═══════════════════════════════════════════════════════════
+// UI 이벤트
+// ═══════════════════════════════════════════════════════════
+
+// 재생/일시정지
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (animState.currentDate >= dateMax) {
+    animState.currentDate = dateMin;
+    prevDate = dateMin;
+    prevActiveSet.clear();
+    particles = [];
+    activePts = [];
+    updateFilter(dateMin);
+  }
+  animState.playing = !animState.playing;
+  animState.lastTs = null;
+  document.getElementById('play-btn').textContent = animState.playing ? '⏸ 일시정지' : '▶ 재생';
+});
+
+// 처음으로
+document.getElementById('reset-btn').addEventListener('click', () => {
+  animState.playing = false;
+  animState.currentDate = dateMin;
+  prevDate = dateMin;
+  prevActiveSet.clear();
+  particles = [];
+  activePts = [];
+  updateFilter(dateMin);
+  document.getElementById('play-btn').textContent = '▶ 재생';
+});
+
+// 배속
+document.getElementById('speed-select').addEventListener('change', e => {
+  animState.speed = parseInt(e.target.value);
+});
+
+// 슬라이더
+document.getElementById('timeline').addEventListener('input', e => {
+  const pct = e.target.value / 1000;
+  const d = dateFromSlider(pct);
+  animState.currentDate = d;
+  // 역방향 이동 시 리셋
+  if (d < prevDate) {
+    prevDate = dateMin;
+    prevActiveSet.clear();
+    particles = [];
+    activePts = [];
+    // 누적 재계산
+    features.filter(f => f.properties.date <= d).forEach(f => {
+      prevActiveSet.add(f.properties.id || f.properties.name);
+    });
+  }
+  updateFilter(d);
+  e.target.style.setProperty('--pct', (pct * 100).toFixed(1) + '%');
+});
+
+// 배경지도 전환
+document.querySelectorAll('input[name="base"]').forEach(r => {
+  r.addEventListener('change', e => switchBase(e.target.value));
+});
+
+// 레이어 토글
+document.getElementById('lyr-protests').addEventListener('change', e => {
+  ['protests-heat','protests-glow','protests-core'].forEach(id => {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', e.target.checked ? 'visible' : 'none');
+  });
+  fireCanvas.style.display = e.target.checked ? '' : 'none';
+});
+
+document.getElementById('lyr-memorials').addEventListener('change', e => {
+  ['memorials-glow','memorials-core'].forEach(id => {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', e.target.checked ? 'visible' : 'none');
+  });
+});
+
+document.getElementById('lyr-1919').addEventListener('change', e => {
+  if (map.getLayer('map-1919')) map.setPaintProperty('map-1919', 'raster-opacity', e.target.checked ? currentOpacity : 0);
+});
+
+// 1919 오버레이 투명도
+let currentOpacity = 0.6;
+const opacitySlider = document.getElementById('map1919-opacity');
+opacitySlider.addEventListener('input', e => {
+  currentOpacity = e.target.value / 100;
+  document.getElementById('opacity-val').textContent = e.target.value + '%';
+  e.target.style.setProperty('--val', e.target.value + '%');
+  if (document.getElementById('lyr-1919').checked && map.getLayer('map-1919')) {
+    map.setPaintProperty('map-1919', 'raster-opacity', currentOpacity);
+  }
+});
+opacitySlider.style.setProperty('--val', '60%');
+</script>
+</body>
+</html>
