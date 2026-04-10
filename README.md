@@ -4,9 +4,9 @@
 
 1919년 3월 1일, 전국 방방곡곡으로 번져나간 3·1 독립선언과 만세운동의 기록을 시간순으로 지도 시각화했습니다. 
 
-**🚀 시연 페이지** | <a href="https://thlee33.github.io/3.1manse/" target="_blank" rel="noopener noreferrer"></a>   
-**🎬 시연 동영상** | <a href="https://youtu.be/lLYi2hGtgIk" target="_blank" rel="noopener noreferrer">유튜브 시연 영상 시청 (YouTube)</a>   
-**📝 기술 블로그** | <a href="https://unique-payment-110.notion.site/3-1-33e80db13da580d781a9f030417e0d69" target="_blank" rel="noopener noreferrer">프로젝트 개발 상세 기록 (Notion)</a>   
+**🚀 시연 페이지** | <a href="https://thlee33.github.io/3.1manse/" target="_blank" rel="noopener noreferrer">시연 페이지 (GitHub Pages)</a>   
+**🎬 시연 동영상** | <a href="https://youtu.be/lLYi2hGtgIk" target="_blank" rel="noopener noreferrer">유튜브 영상 (YouTube)</a>   
+**📝 기술 블로그** | <a href="https://unique-payment-110.notion.site/3-1-33e80db13da580d781a9f030417e0d69" target="_blank" rel="noopener noreferrer">기술 블로그 (Notion)</a>   
 
 ---
 
@@ -24,7 +24,6 @@
 - **타임라인 애니메이션 엔진**: 1919년 3월부터의 만세운동 기록을 1배속부터 20배속까지 가변 속도로 재생할 수 있습니다.
 - **불꽃 파티클 시스템 (Canvas API)**: 각 발발 지점의 규모와 시점에 따라 불꽃이 피어오르고 소멸하는 효과를 적용하여 '들불' 같은 확산세를 표현했습니다.
 - **인터랙티브 히트맵**: MapLibre GL JS를 활용하여 만세운동의 밀집도를 히트맵으로 시각화했습니다.
-- **다국어/다목적 배경지도**: 브이월드(VWorld)의 야간, 일반, 영상, 백지도를 선택하여 다양한 관점에서 지도를 살펴볼 수 있습니다.
 - **역사 유적지 정보**: 기념관 및 역사관 위치와 상세 정보를 팝업으로 제공합니다.
 
 ---
@@ -34,34 +33,17 @@
 - **Frontend**: HTML5, Vanilla JS, CSS3
 - **Map Library**: MapLibre GL JS
 - **Visualization**: HTML5 Canvas API (Particle System)
-- **Map Tiles**: 브이월드(VWorld) 오픈 API (WMS/WMTS)
 - **Data Source**: 국사편찬위원회 삼일운동 데이터베이스
 
 ![시각화 세부 화면](./그림2.png)
-*스크린샷 2: 전국으로 확산되는 불꽃 시각화*
-
----
-
-## 🚀 기술적 도전과 해결 (Technical Highlights)
-
-### 1. 들불을 표현하기 위한 파티클 최적화
-전국 수천 건의 데이터를 지도 위에서 동시에 파티클로 렌더링하기 위해 Canvas API를 활용한 최적화된 렌더링 루프를 구축했습니다. 각 좌표의 화면 픽셀 변환 연산을 최소화하여 저사양 환경에서도 부드러운 애니메이션을 제공합니다.
-
-### 2. HTTPS 환경에서의 지도 로딩 해결
-GitHub Pages(HTTPS) 환경에서 브이월드(HTTP) 타일을 불러올 때 발생하는 보안 이슈를 해결했습니다. 초기에는 프록시 우회 방식을 사용했으나, 최종적으로는 브이월드의 HTTPS 직접 연결(Port 443) 방식을 적용하여 안전하고 빠른 로딩을 구현했습니다.
+*스크린샷 2: 확대해서 개별 포인트를 클릭하면 간략한 정보를 볼 수 있습니다.*
 
 ---
 
 ## 📊 데이터 출처
-- **국사편찬위원회 삼일운동 데이터베이스**: 일자별 만세운동 발생 위치 및 참가 인원 자료 활용.
+- **국사편찬위원회 삼일운동 데이터베이스**: 개방 데이터셋의 사건정보 csv, 세부장소 csv를 활용.
 
 ![상세 데이터 인터랙션](./그림3.png)
-*스크린샷 3: 개별 운동 기록 클릭 시 상세 팝업 정보*
+*스크린샷 3: 현재 방문할 수 있는 기념관 및 역사관 일부를 적용*
 
 ---
-
-## 👨‍💻 제작자 정보
-- **이름**: [사용자 이름 입력 가능]
-- **문의**: [이메일 등 입력 가능]
-
-© 2026 3·1 Independence Movement Visualization Project.
