@@ -16,12 +16,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:#000;overflow:hidden}
 
 .panel{position:absolute;background:rgba(8,8,14,0.9);border:1px solid rgba(255,110,20,0.3);border-radius:10px;color:#f0e0c0;backdrop-filter:blur(8px);z-index:10}
 
-#title-panel{top:16px;left:16px;padding:12px 18px;border-left:4px solid #ff4500}
-#title-panel h1{font-size:16px;font-weight:700;color:#ffd060;letter-spacing:1px}
-#title-panel p{font-size:11px;color:#999;margin-top:4px;line-height:1.4}
-#title-panel p a:hover{text-decoration:underline !important}
+#title-panel{top:12px;left:12px;padding:8px 14px;border-left:3px solid #ff4500}
+#title-panel h1{font-size:14px;font-weight:700;color:#ffd060;letter-spacing:1px}
+#title-panel p{display:none}
 
-#layer-panel{top:16px;right:16px;padding:14px 16px;width:205px}
+#layer-panel{top:16px;right:16px;width:200px;padding:0;overflow:hidden;transition:all 0.3s ease}
+#layer-header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:rgba(255,255,255,0.03)}
+#layer-header:hover{background:rgba(255,255,255,0.08)}
+#layer-toggle-icon{font-size:10px;transition:transform 0.3s;color:#ff7020}
+#layer-content{padding:14px 16px;transition:opacity 0.3s}
+#layer-panel.collapsed{width:120px}
+#layer-panel.collapsed #layer-content{display:none}
+#layer-panel.collapsed #layer-toggle-icon{transform:rotate(-90deg)}
 .sec-title{font-size:10px;font-weight:700;color:#ff7020;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(255,110,32,0.2)}
 .row{display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer}
 .row input{accent-color:#ff6020;cursor:pointer;flex-shrink:0}
@@ -29,7 +35,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#000;overflow:hidden}
 .sec{margin-bottom:14px}
 .sec:last-child{margin-bottom:0}
 
-#anim-panel{bottom:24px;left:50%;transform:translateX(-50%);padding:14px 22px;min-width:620px;max-width:94vw}
+#anim-panel{bottom:0;left:50%;transform:translateX(-50%);padding:12px 24px;width:52%;min-width:480px;max-width:98vw;border-bottom-left-radius:0;border-bottom-right-radius:0}
 #date-disp{font-size:14px;font-weight:700;color:#ffd060;letter-spacing:1px;text-shadow:0 0 8px rgba(255,160,0,.4);margin-right:10px;min-width:110px;text-align:right}
 #timeline{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;cursor:pointer;outline:none;background:linear-gradient(to right,#ff6020 var(--p,0%),#2a2a2a var(--p,0%))}
 #timeline::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#ffd060;box-shadow:0 0 6px rgba(255,200,0,.8);cursor:pointer}
@@ -64,6 +70,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#000;overflow:hidden}
 .load-fire{font-size:52px;animation:flk .4s infinite alternate}
 @keyframes flk{from{opacity:1;transform:scale(1) rotate(-3deg)}to{opacity:.7;transform:scale(1.1) rotate(3deg)}}
 #loading p{color:#ffd060;font-size:14px}
+/* 지도 컨트롤 위치 조정 */
+.maplibregl-ctrl-bottom-right { margin-bottom: 90px !important; }
 </style>
 </head>
 <body>
@@ -73,43 +81,54 @@ body{font-family:'Noto Sans KR',sans-serif;background:#000;overflow:hidden}
 
 <div class="panel" id="title-panel">
   <h1>🔥 3·1 만세운동</h1>
-  <p>1919년 독립운동 확산 기록<br><a href="https://hgis.history.go.kr/samil" target="_blank" style="color:#999;text-decoration:none">국사편찬위원회 삼일운동 데이터베이스</a></p>
 </div>
 
-<div class="panel" id="layer-panel">
-  <div class="sec">
-    <div class="sec-title">배경지도</div>
-    <label class="row"><input type="radio" name="base" value="night" checked><span>브이월드 야간</span></label>
-    <label class="row"><input type="radio" name="base" value="base"><span>브이월드 일반</span></label>
-    <label class="row"><input type="radio" name="base" value="satellite"><span>브이월드 영상</span></label>
-    <label class="row"><input type="radio" name="base" value="white"><span>브이월드 백지도</span></label>
+<div class="panel collapsed" id="layer-panel">
+  <div id="layer-header">
+    <div class="sec-title" style="margin-bottom:0; border-bottom:none;">지도 설정</div>
+    <span id="layer-toggle-icon">▼</span>
   </div>
-  <div class="sec">
-    <div class="sec-title">레이어</div>
-    <label class="row"><input type="checkbox" id="lyr-p" checked><span>만세운동</span></label>
-    <label class="row"><input type="checkbox" id="lyr-m"><span>기념관 및 역사관</span></label>
-  </div>
-  <div class="sec">
-    <div class="sec-title">출처 및 설명</div>
-    <a href="https://unique-payment-110.notion.site/3-1-33e80db13da580d781a9f030417e0d69" target="_blank" style="font-size:11px;color:#60aaff;text-decoration:none">데이터 및 지도 설명 (Notion)</a>
+  <div id="layer-content">
+    <div class="sec">
+      <div class="sec-title">배경지도</div>
+      <label class="row"><input type="radio" name="base" value="night" checked><span>브이월드 야간</span></label>
+      <label class="row"><input type="radio" name="base" value="base"><span>브이월드 일반</span></label>
+      <label class="row"><input type="radio" name="base" value="satellite"><span>브이월드 영상</span></label>
+      <label class="row"><input type="radio" name="base" value="white"><span>브이월드 백지도</span></label>
+    </div>
+    <div class="sec">
+      <div class="sec-title">레이어</div>
+      <label class="row"><input type="checkbox" id="lyr-p" checked><span>만세운동</span></label>
+      <label class="row"><input type="checkbox" id="lyr-m"><span>기념관 및 역사관</span></label>
+    </div>
+    <div class="sec">
+      <div class="sec-title">출처 및 설명</div>
+      <a href="https://unique-payment-110.notion.site/3-1-33e80db13da580d781a9f030417e0d69" target="_blank" style="font-size:11px;color:#60aaff;text-decoration:none">데이터 설명 (Notion)</a>
+      <a href="https://hgis.history.go.kr/samil" target="_blank" style="font-size:10px;color:#888;text-decoration:none;display:block;margin-top:6px;line-height:1.4">국사편찬위원회 삼일운동 데이터베이스</a>
+    </div>
   </div>
 </div>
 
 <div class="panel" id="anim-panel">
   <input type="range" id="timeline" min="0" max="1000" value="0">
-  <div class="arow">
-    <div id="date-disp">1919년 1월 1일</div>
-    <button class="btn" id="play-btn">▶ 재생</button>
-    <button class="btn" id="reset-btn">↺ 처음</button>
-    <select id="speed-sel">
-      <option value="1">1배속</option>
+  <div class="arow" style="gap:12px; justify-content:space-between">
+    <div style="display:flex; flex-direction:column; gap:2px; min-width:120px">
+      <div id="date-disp" style="font-size:13px; font-weight:700; color:#ffd060; text-align:left; min-width:unset; margin-right:0">1919년 2월 27일</div>
+      <span id="prog" style="font-size:11px; color:#777; text-align:left">0 / 0 건</span>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center">
+      <button class="btn" id="play-btn" style="padding:6px 16px; font-size:12px; min-width:85px">재생</button>
+      <button class="btn" id="reset-btn" style="padding:6px 16px; font-size:13px; white-space:nowrap; min-width:95px">↺ 처음으로</button>
+      <select id="speed-sel" style="padding:5px 8px; font-size:12px">
+      <option value="0.5">0.5배속</option>
+      <option value="1" selected>1배속</option>
       <option value="2">2배속</option>
-      <option value="5" selected>5배속</option>
+      <option value="5">5배속</option>
       <option value="10">10배속</option>
       <option value="20">20배속</option>
     </select>
-    <span id="prog">0 / 0 건</span>
   </div>
+</div>
 </div>
 
 <div id="popup">
@@ -326,7 +345,7 @@ setTimeout(()=>{ document.getElementById('loading').style.display='none'; },1000
 map.on('load',()=>{
   mapReady=true;
   document.getElementById('loading').style.display='none';
-  setFilter(D_MIN);
+  setFilter('1919-02-27');
   rafLoop();
 });
 
@@ -369,7 +388,7 @@ function setFilter(dateStr){
 
 // ── 애니메이션 루프 ───────────────────────────────────────────────
 // speed배속: speed×3 일/초
-const anim={playing:false,ms:MS_MIN,speed:5,lastTs:null};
+const anim={playing:false,ms:new Date('1919-02-27').getTime(),speed:1,lastTs:null};
 
 function rafLoop(){
   requestAnimationFrame(function loop(ts){
@@ -385,7 +404,7 @@ function rafLoop(){
       }
       if(anim.ms>=MS_MAX){
         anim.playing=false;
-        document.getElementById('play-btn').textContent='▶ 재생';
+        document.getElementById('play-btn').textContent='재생';
       }
     }
     anim.lastTs=ts;
@@ -409,19 +428,19 @@ document.getElementById('play-btn').addEventListener('click',()=>{
   }
   anim.playing=!anim.playing;
   anim.lastTs=null;
-  document.getElementById('play-btn').textContent=anim.playing?'⏸ 일시정지':'▶ 재생';
+  document.getElementById('play-btn').textContent=anim.playing?'일시정지':'재생';
 });
 
 function doReset(){
   anim.playing=false; anim.ms=MS_MIN; prevDate=D_MIN;
   particles=[]; activePts=[]; newPts=[];
   setFilter(D_MIN);
-  document.getElementById('play-btn').textContent='▶ 재생';
+  document.getElementById('play-btn').textContent='재생';
 }
 document.getElementById('reset-btn').addEventListener('click',doReset);
 
 document.getElementById('speed-sel').addEventListener('change',e=>{
-  anim.speed=parseInt(e.target.value);
+  anim.speed=parseFloat(e.target.value);
 });
 
 document.getElementById('timeline').addEventListener('input',e=>{
@@ -440,6 +459,10 @@ document.getElementById('timeline').addEventListener('input',e=>{
 
 document.querySelectorAll('input[name="base"]').forEach(r=>{
   r.addEventListener('change',e=>switchBase(e.target.value));
+});
+
+document.getElementById('layer-header').addEventListener('click',()=>{
+  document.getElementById('layer-panel').classList.toggle('collapsed');
 });
 
 document.getElementById('lyr-p').addEventListener('change',e=>{
